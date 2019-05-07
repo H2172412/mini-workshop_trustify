@@ -37,6 +37,7 @@ def home():
         tag_rolling_code = rlc_params[24:32]
 
         ####---- From Database ----####
+        server_key = None
         try:
             conn = sqlite3.connect('trustify.db')
             cur = conn.cursor()
@@ -64,7 +65,7 @@ def home():
             try:
                 conn = sqlite3.connect('trustify.db')
                 cur = conn.cursor()
-                cur.execute("UPDATE ntstorage SET TimeStamp=? WHERE UID=?", (124,12345678901234))
+                cur.execute("UPDATE ntstorage SET TimeStamp=? WHERE UID=?", (tag_time_stamp_int,tag_uid))
                 conn.commit()
             except:
                 render_error() 
