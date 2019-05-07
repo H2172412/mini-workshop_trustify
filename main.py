@@ -64,9 +64,8 @@ def home():
             try:
                 conn = sqlite3.connect('trustify.db')
                 cur = conn.cursor()
-                cur.execute("UPDATE ntstorage SET server_time_stamp=? WHERE UID=?", (tag_time_stamp_int,tag_uid,))
-                [server_uid, server_key, server_time_stamp, previous_rolling_code] = cur.fetchone()
-                server_time_stamp_int = int(server_time_stamp)
+                cur.execute("UPDATE ntstorage SET TimeStamp=? WHERE UID=?", (124,12345678901234))
+                conn.commit()
             except:
                 render_error() 
 
