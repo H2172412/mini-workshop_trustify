@@ -1,0 +1,7 @@
+# Ignore VScode
+*.vscode
+
+# Ignore pycache
+*__pycache__/
+*.py[cod]
+

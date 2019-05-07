@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 5px;
+        text-align: left;
+    }
+</style>
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{title}}</title>
+</head>
+<body>
+    <h1>SIC43NT Demonstration</h1>
+    <table style="width:75%">
+        <tr>
+            <th>UID[7]</th>
+            <td colspan="3">{{uid}}</td>
+        </tr>
+
+        <tr>
+            <th>Default Key</th>
+            <td colspan="3">{{key}}</td>
+        </tr>
+
+        <tr>
+            <th>-</th>
+            <td>From Tag</td>
+            <td>From Server</td>
+            <td>Result</td>
+        </tr>
+
+        <tr>
+            <th>Tamper Flag(HEX)</th>
+            <td>{{flag_tamper}}</td>
+            <td>{{flag_tamper_from_server}}</td>
+            <td>{{flag_tamper_decision}}</td>
+        </tr>
+
+        <tr>
+            <th>Time Stamp(DEC)</th>
+            <td>{{time_stamp_int}}</td>
+            <td>{{time_stamp_from_server}}</td>
+            <td>{{time_stamp_decision}}</td>
+        </tr>
+
+        <tr>
+            <th>Rolling code(HEX)</th>
+            <td>{{rolling_code}}</td>
+            <td>{{rolling_code_from_server}}</td>
+            <td>{{rolling_code_decision}}</td>
+        </tr>
+
+    </table>
+</body>
+</html>
