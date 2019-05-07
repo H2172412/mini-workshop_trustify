@@ -22,82 +22,68 @@ def home():
     except:
         rlc_params = None
         
-    if  rlc_params is None:
-        return render_template(
-                                'index.html',
-                                title = 'SIC43NT Demonstration',
-                                uid = 'N/A',
-                                key = 'N/A',
-                                flag_tamper = 'N/A',
-                                flag_tamper_from_server = 'N/A',
-                                flag_tamper_decision = 'N/A',
-
-                                time_stamp_int = 'N/A',
-                                time_stamp_from_server = 'N/A',
-                                time_stamp_decision = 'N/A',
-
-                                rolling_code = 'N/A',
-                                rolling_code_from_server = 'N/A',
-                                rolling_code_decision = 'N/A'
-                            )
-    else:
-        #### GET PARAMS ####
+    if  rlc_params:
+        """
+        Preraring Params
+        
+        1: Get params from URL
+        2: Get params from Database
+        """
+        ####---- From URL ----####
         tag_uid = rlc_params[0:14]
-        tag_key = 'FFFFFF' + tag_uid
         tag_flag_tamper = rlc_params[14:16]
         tag_time_stamp = rlc_params[16:24]
         tag_time_stamp_int = int(tag_time_stamp, 16)
         tag_rolling_code = rlc_params[24:32]
 
-        keystream = Keystream()
-        server_rolling_code = keystream.stream(tag_key, tag_time_stamp, 4).upper()
-        
-        print("server_rolling_code:",server_rolling_code)
-
-        #### QUERY BY UID ####
+        ####---- From Database ----####
         try:
             conn = sqlite3.connect('trustify.db')
             cur = conn.cursor()
             cur.execute("SELECT * FROM ntstorage WHERE UID=?", (tag_uid,))
-            [server_uid, server_key, server_time_stamp, rlccc] = cur.fetchone()
+            [server_uid, server_key, server_time_stamp, previous_rolling_code] = cur.fetchone()
             server_time_stamp_int = int(server_time_stamp)
         except:
-            return render_template(
-                                    'index.html',
-                                    title = 'SIC43NT Demonstration',
-                                    uid = 'N/A',
-                                    key = 'N/A',
-                                    flag_tamper = 'N/A',
-                                    flag_tamper_from_server = 'N/A',
-                                    flag_tamper_decision = 'N/A',
+            render_error()
 
-                                    time_stamp_int = 'N/A',
-                                    time_stamp_from_server = 'N/A',
-                                    time_stamp_decision = 'N/A',
+        keystream = Keystream()
+        server_rolling_code = keystream.stream(server_key, tag_time_stamp, 4).upper()
+        
+        print("server_rolling_code:",server_rolling_code)
 
-                                    rolling_code = 'N/A',
-                                    rolling_code_from_server = 'N/A',
-                                    rolling_code_decision = 'N/A'
-                                )
+        """
+        Trustify agreement check
+        
+        1: Compare timestamp (server VS tag)
+        2: Get params from Database
+        """
+        #### COMPARE TIMESTAMP ####
+        if tag_time_stamp_int > server_time_stamp_int:
+            time_stamp_decision = 'Rolling Code Updated!!'
+
+            try:
+                conn = sqlite3.connect('trustify.db')
+                cur = conn.cursor()
+                cur.execute("UPDATE ntstorage SET server_time_stamp=? WHERE UID=?", (tag_time_stamp_int,tag_uid,))
+                [server_uid, server_key, server_time_stamp, previous_rolling_code] = cur.fetchone()
+                server_time_stamp_int = int(server_time_stamp)
+            except:
+                render_error() 
+
+        else:
+            time_stamp_decision = 'Rolling Code Reused!!'
 
         #### COMPARE ROLLING CODE ####
         if tag_rolling_code == server_rolling_code:
             rolling_code_decision = 'Correct!!'
         else:
-            rolling_code_decision = 'Incorrect...'
-
-        #### COMPARE TIMESTAMP ####
-        if tag_time_stamp_int > server_time_stamp_int:
-            time_stamp_decision = 'Correct!!'
-        else:
-            time_stamp_decision = 'Incorrect...'
-
+            rolling_code_decision = 'Incorrect...'   
 
         return render_template(
                                 'index.html',
                                 title = 'SIC43NT Demonstration',
                                 uid = tag_uid,
-                                key = tag_key,
+                                key = server_key,
                                 flag_tamper = tag_flag_tamper,
                                 flag_tamper_from_server = 'N/A',
                                 flag_tamper_decision = 'N/A',
@@ -110,6 +96,30 @@ def home():
                                 rolling_code_from_server = server_rolling_code,
                                 rolling_code_decision = rolling_code_decision
                             )
+
+    else:
+        render_error()
+
+def render_error():
+    return render_template(
+                            'index.html',
+                            title = 'SIC43NT Demonstration',
+                            uid = 'N/A',
+                            key = 'N/A',
+                            flag_tamper = 'N/A',
+                            flag_tamper_from_server = 'N/A',
+                            flag_tamper_decision = 'N/A',
+
+                            time_stamp_int = 'N/A',
+                            time_stamp_from_server = 'N/A',
+                            time_stamp_decision = 'N/A',
+
+                            rolling_code = 'N/A',
+                            rolling_code_from_server = 'N/A',
+                            rolling_code_decision = 'N/A'
+                        )
+
+        
 
 @app.route('/add')
 def contact():
