@@ -55,8 +55,8 @@ def home():
         """
         Trustify agreement check
         
-        1: Compare timestamp (server VS tag)
-        2: Get params from Database
+        1: Compare timestamp (tag VS server)
+        2: Compare Rolling Code (tag VS server)
         """
         #### COMPARE TIMESTAMP ####
         if tag_time_stamp_int > server_time_stamp_int:
@@ -79,6 +79,7 @@ def home():
         else:
             rolling_code_decision = 'Incorrect...'   
 
+            
         return render_template(
                                 'index.html',
                                 title = 'SIC43NT Demonstration',
