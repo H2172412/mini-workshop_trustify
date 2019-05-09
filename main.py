@@ -12,17 +12,29 @@ app = Flask(__name__)
 from trustify import Keystream
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def home():
     """Renders the home page."""
-    try:
-        rlc_params = request.args.get('rlc')
-        if len(rlc_params) != 32:
-            rlc_params = None
-    except:
-        rlc_params = None
-        
-    if  rlc_params:
+    rlc_params = request.args.get('rlc')
+    if not rlc_params or len(rlc_params) != 32:
+        return render_template(
+                        'index.html',
+                        title = 'SIC43NT Demonstration',
+                        uid = 'N/A',
+                        key = 'N/A',
+                        flag_tamper = 'N/A',
+                        flag_tamper_from_server = 'N/A',
+                        flag_tamper_decision = 'N/A',
+
+                        time_stamp_int = 'N/A',
+                        time_stamp_from_server = 'N/A',
+                        time_stamp_decision = 'N/A',
+
+                        rolling_code = 'N/A',
+                        rolling_code_from_server = 'N/A',
+                        rolling_code_decision = 'N/A'
+                    )
+    else:    
         """
         Preraring Params
         
@@ -38,14 +50,12 @@ def home():
 
         ####---- From Database ----####
         server_key = None
-        try:
-            conn = sqlite3.connect('trustify.db')
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM ntstorage WHERE UID=?", (tag_uid,))
-            [server_uid, server_key, server_time_stamp, previous_rolling_code] = cur.fetchone()
-            server_time_stamp_int = int(server_time_stamp)
-        except:
-            render_error()
+        
+        conn = sqlite3.connect('trustify.db')
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM ntstorage WHERE UID=?", (tag_uid,))
+        [server_uid, server_key, server_time_stamp, previous_rolling_code] = cur.fetchone()
+        server_time_stamp_int = int(server_time_stamp)
 
         keystream = Keystream()
         server_rolling_code = keystream.stream(server_key, tag_time_stamp, 4).upper()
@@ -62,14 +72,10 @@ def home():
         if tag_time_stamp_int > server_time_stamp_int:
             time_stamp_decision = 'Rolling Code Updated!!'
 
-            try:
-                conn = sqlite3.connect('trustify.db')
-                cur = conn.cursor()
-                cur.execute("UPDATE ntstorage SET TimeStamp=? WHERE UID=?", (tag_time_stamp_int,tag_uid))
-                conn.commit()
-            except:
-                render_error() 
-
+            conn = sqlite3.connect('trustify.db')
+            cur = conn.cursor()
+            cur.execute("UPDATE ntstorage SET TimeStamp=? WHERE UID=?", (tag_time_stamp_int,tag_uid))
+            conn.commit()
         else:
             time_stamp_decision = 'Rolling Code Reused!!'
 
@@ -98,69 +104,59 @@ def home():
                                 rolling_code_decision = rolling_code_decision
                             )
 
-    else:
-        render_error()
-
-def render_error():
-    return render_template(
-                            'index.html',
-                            title = 'SIC43NT Demonstration',
-                            uid = 'N/A',
-                            key = 'N/A',
-                            flag_tamper = 'N/A',
-                            flag_tamper_from_server = 'N/A',
-                            flag_tamper_decision = 'N/A',
-
-                            time_stamp_int = 'N/A',
-                            time_stamp_from_server = 'N/A',
-                            time_stamp_decision = 'N/A',
-
-                            rolling_code = 'N/A',
-                            rolling_code_from_server = 'N/A',
-                            rolling_code_decision = 'N/A'
-                        )
-
-        
-
 @app.route('/add')
 def contact():
     """Renders the add page."""
+    return render_template("add.html")
+
+@app.route('/', methods=['POST'])
+def added():  
     try:
-        uid_params = request.args.get('uid')
+        uid_params = request.form['uid'].upper()
         if len(uid_params) != 14:
             uid_params = None
-        key_params = request.args.get('key')
+
+        key_params = request.form['key'].upper()
         if len(key_params) != 20:
             key_params = None
+
     except:
         uid_params = None
         key_params = None
-    
+
     if uid_params is None or key_params is None:    
-        return render_template(
-            'add.html',
-            title='Add',
-            uid = 'Need UID: 14',
-            key = 'Need Key: 20'
+        return render_template('result.html',
+            head = 'SIC43NT Add UID Failure..',
+            uid = 'Need UID: 14 chars',
+            key = 'Need Key: 20 chars'
         )
     else:
+        conn = sqlite3.connect('trustify.db')
+        c = conn.cursor()
         try:
-            conn = sqlite3.connect('trustify.db')
-            c = conn.cursor()
+            #### ADD UID ####
             c.execute("INSERT INTO ntstorage (UID, Key, TimeStamp, RollingCode) VALUES (?,?,?,?)",
-                        (uid_params.upper(), key_params.upper(), -1, '0'))
+                        (uid_params, key_params, -1, '0'))
             conn.commit()
             conn.close()
-        except:
-            uid_params = 'may be conflict?'
-            key_params = 'wrong pattern'
+            head_params = 'SIC43NT Add UID Successful!!'
+        except Error as ee:
+            #### UPDATE UID ####
+            if 'UNIQUE' in str(ee):
+                c.execute("UPDATE ntstorage SET Key=? WHERE UID=?", (key_params,uid_params))
+                conn.commit()
+                conn.close()
+                head_params = 'SIC43NT Update UID or Key Successful!!'
+            else:
+                head_params = 'SIC43NT Add UID Failure..',
+                uid_params = 'wrong pattern'
+                key_params = 'wrong pattern'
 
-        return render_template(
-                'add.html',
-                title='Add',
-                uid = uid_params.upper(),
-                key = key_params.upper()
-            )
+        return render_template("result.html",
+                head = head_params,
+                uid = uid_params,
+                key = key_params
+        )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

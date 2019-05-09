@@ -1,36 +1,21 @@
 <!DOCTYPE html>
 
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-
-<style>
-    table, th, td {
-        border: 1px solid black;
-        border-collapse: collapse;
-    }
-
-    th, td {
-        padding: 5px;
-        text-align: left;
-    }
-</style>
-
 <head>
     <meta charset="utf-8" />
-    <title>{{title}}</title>
+    <title>Trustify: Add page</title>
 </head>
 <body>
     <h1>SIC43NT Add UID page</h1>
-    <table style="width:75%">
-        <tr>
+    <form role="form" method='POST' action='/'>
+        <div class="form-group">
             <th>New UID:</th>
-            <td colspan="3">{{uid}}</td>
-        </tr>
-
-        <tr>
+            <input type="text" name="uid" class="form-control" id="uid-box" placeholder="Enter UID from Tag" size="30" autofocus required>
+            <br>
+            <br>
             <th>New Key:</th>
-            <td colspan="3">{{key}}</td>
-        </tr>
-
-    </table>
+            <input type="text" name="key" class="form-control" id="key-box" placeholder="Enter new secret key.." size="35" autofocus required>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-default">Submit</button>
+    </form>
 </body>
-</html>
